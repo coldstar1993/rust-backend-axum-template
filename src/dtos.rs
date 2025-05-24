@@ -146,3 +146,25 @@ impl FilterUserDto {
 pub struct UserData {
     pub user: FilterUserDto,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserResponseDto {
+    pub status: String,
+    pub data: UserData,
+}
+
+#[derive(Serialize, Deserialize, Validate)]
+pub struct RequestQueryDto {
+    #[validate(range(min = 1))]
+    pub page: Option<usize>,
+    #[validate(range(min = 1, max = 50))]
+    pub limit: Option<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserListResponseDto {
+    pub status: String,
+    pub users: Vec<FilterUserDto>,
+    pub results: i64,
+}
+
