@@ -110,3 +110,39 @@ pub struct ResetPasswordRequestDto {
     )]
     pub new_password_confirm: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FilterUserDto {
+    pub id: String,
+    pub name: String,
+    pub email: String,
+    pub role: String,
+    pub verified: bool,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: DateTime<Utc>,
+}
+
+impl FilterUserDto {
+    pub fn filter_user(user: &User) -> Self {
+        FilterUserDto {
+            id: user.id.to_string(),
+            name: user.name.to_owned(),
+            email: user.email.to_owned(),
+            role: user.role.to_str().to_string(),
+            verified: user.verified,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        }
+    }
+
+    pub fn filter_users(user: &[User]) -> Vec<FilterUserDto> {
+        user.iter().map(FilterUserDto::filter_user).collect()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserData {
+    pub user: FilterUserDto,
+}
