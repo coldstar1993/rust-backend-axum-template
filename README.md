@@ -1,7 +1,5 @@
 # Rust Backend with Axum, PostgreSQL, & Email Verification
 
-[![Watch the video](https://img.youtube.com/vi/M0wi7V1rP4Y/maxresdefault.jpg)](https://youtu.be/M0wi7V1rP4Y)
-
 This repository contains the source code for a fully functional backend application built with Rust, using the [Axum](https://github.com/tokio-rs/axum) framework. It includes user authentication, email verification, and a connection to a PostgreSQL database.
 
 ## 🛠️ Features
@@ -29,7 +27,7 @@ To run this project, you will need:
 1. **Clone the repository:**
 
     ```bash
-    git clone https://github.com/AarambhDevHub/rust-backend-axum.git
+    git clone https://github.com/coldstar1993/rust-backend-axum.git
     cd rust-backend-axum
     ```
 
@@ -78,7 +76,7 @@ The application will send verification emails to users after registration.
 
 ## 🧪 API Testing with Postman
 
-You can test all the API endpoints using the provided Postman collection. [Download the Postman collection here](https://github.com/AarambhDevHub/rust-backend-axum/blob/main/postman_collection.json) and import it into Postman.
+You can test all the API endpoints using the provided Postman collection. [Download the Postman collection here](https://github.com/coldstar1993/rust-backend-axum/blob/main/postman_collection.json) and import it into Postman.
 
 API Endpoints:
 
@@ -126,20 +124,13 @@ Add role-based access control (RBAC) for different user roles (admin, user).
 Improve security with additional layers like rate limiting and input validation.
 Expand API to include more features like user profiles, etc.
 
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-
-## ✨ Acknowledgements
-
-[Axum](https://github.com/tokio-rs/axum) for building powerful, fast APIs in Rust.
-
-[PostgreSQL](https://www.postgresql.org/) for reliable database management.
-
-[SQLx](https://github.com/launchbadge/sqlx) for async SQL in Rust.
-
 ## Donations
 
-If you find this project useful and would like to support its continued development, you can make a donation via [Buy Me a Coffee](https://buymeacoffee.com/aarambhdevhub).
+If you find this project useful and would like to support its continued development, you can make a donation via this address:
+
+![Buy Me a Coffee](./assets/eth-address.png)
 
 Thank you for your support!
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
