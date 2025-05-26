@@ -50,4 +50,28 @@ impl DbClient {
         Ok(())
     }
 
+    pub async fn update_pwd(&self,  user_id: &Uuid, new_password: &String)-> Result<(), sqlx::Error>  {
+        let _= sqlx::query!(r#"UPDATE users SET password=$1 where id=$2"#, new_password, user_id)
+                    .execute(&self.pool).await?;
+        Ok(())
+    }
+
+    pub async fn verifed_token(&self, token: &str) -> Result<(), sqlx::Error> {
+        let _ = sqlx::query!(
+            r#"
+            UPDATE users
+            SET verified = true, 
+                updated_at = Now(),
+                verification_token = NULL,
+                token_expires_at = NULL
+            WHERE verification_token = $1
+            "#,
+            token
+        )
+        .execute(&self.pool)
+        .await;
+
+        Ok(())
+    }
+
 }
