@@ -23,6 +23,7 @@ use crate::{
 pub fn auth_handler() -> Router {
     Router::new()
         .route("/register", post(register))
+        .route("/login", post(login))
 
 }
 
@@ -74,5 +75,66 @@ async fn register(
         }
 
         Err(e) => Err(AppError::server_error(e.to_string())),
+    }
+}
+
+async fn login(
+    Extension(app_state): Extension<Arc<AppState>>,
+    Json(body): Json<LoginUserDto>,
+) -> Result<impl IntoResponse, AppError> {
+    body.validate().map_err(|e| AppError {
+        message: e.to_string(),
+        status: StatusCode::BAD_REQUEST,
+    })?;
+
+    // query user
+    let user = app_state
+        .db_client
+        .get_user(None, None, Some(&body.email), None)
+        .await
+        .map_err(|e| AppError::server_error(e.to_string()))?;
+
+    match user {
+        Some(u) => {
+            // check password
+            let password_matched = password::compare(&body.password, &u.password)
+                .map_err(|_| AppError::bad_request(ErrorMessage::WrongCredentials.to_str()))?;
+
+            if password_matched {
+                // construct jwt and set into cookies
+                let token = token::create_token(
+                    &u.id.to_string(),
+                    &app_state.env.jwt_secret.as_bytes(),
+                    app_state.env.jwt_maxage,
+                )
+                .map_err(|e| AppError::server_error(e.to_string()))?;
+
+                let cookie_duration = time::Duration::minutes(app_state.env.jwt_maxage);
+                let cookie = Cookie::build(("token", token.clone()))
+                    .path("/")
+                    .max_age(cookie_duration)
+                    .http_only(true)
+                    .build();
+
+                let response_dto = Json(UserLoginResponseDto {
+                    status: "success".to_string(),
+                    token,
+                });
+
+                let mut headers = HeaderMap::new();
+                headers.append(header::SET_COOKIE, cookie.to_string().parse().unwrap());
+
+                let mut response = response_dto.into_response();
+                response.headers_mut().extend(headers);
+
+                Ok((StatusCode::OK, "true".to_string()))
+            } else {
+                Err(AppError {
+                    message: ErrorMessage::WrongCredentials.to_str(),
+                    status: StatusCode::BAD_GATEWAY,
+                })
+            }
+        }
+        None => Err(AppError::new("", StatusCode::BAD_GATEWAY)),
     }
 }
