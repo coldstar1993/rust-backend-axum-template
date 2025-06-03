@@ -24,7 +24,8 @@ pub fn auth_handler() -> Router {
     Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
-
+        .route("/forgot-password", post(forgot_password))
+        .route("/reset-password", post(reset_password))
 }
 
 async fn register(
@@ -137,4 +138,135 @@ async fn login(
         }
         None => Err(AppError::new("", StatusCode::BAD_GATEWAY)),
     }
+}
+
+async fn verify() {}
+
+async fn forgot_password(
+    Extension(app_state): Extension<Arc<AppState>>,
+    Json(body): Json<ForgotPasswordRequestDto>,
+) -> Result<impl IntoResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::bad_request(e.to_string()))?;
+    // query user by email
+    let user = app_state
+        .db_client
+        .get_user(None, None, Some(&body.email), None)
+        .await
+        .map_err(|e| AppError::server_error(e.to_string()))?;
+
+    if let Some(u) = user {
+        // generate new verification_token & update expire_time
+        let verification_token = uuid::Uuid::new_v4().to_string();
+        let expires_at = Utc::now() + Duration::hours(24);
+        // store into db
+        app_state
+            .db_client
+            .add_verified_token(&u.id, &verification_token, expires_at)
+            .await
+            .map_err(|e| AppError::server_error(e.to_string()))?;
+
+        // send to email
+        //
+        return Ok(());
+    }
+    Err(AppError::bad_request("user is not found"))
+}
+
+async fn reset_password(
+    Extension(app_state): Extension<Arc<AppState>>,
+    Json(body): Json<ResetPasswordRequestDto>,
+) -> Result<impl IntoResponse, AppError> {
+    body.validate()
+        .map_err(|e| AppError::bad_request(e.to_string()))?;
+
+    // query user by verification_token
+    let user = app_state
+        .db_client
+        .get_user(None, None, None, Some(body.token.as_str()))
+        .await
+        .map_err(|e| AppError::bad_request(e.to_string()))?;
+
+    /*
+    // hash again & save new password
+    match user {
+        Some(u) => {
+            // check if token expires
+            if let Some(expire) = u.token_expires_at {
+                if Utc::now() > expire {
+                    return Err(AppError::bad_request(
+                        "Verification token has expired".to_string(),
+                    ));
+                }
+            } else {
+                return Err(AppError::bad_request(
+                    "Invalid verification token".to_string(),
+                ));
+            }
+
+            // save new password
+            let hash_pwd = password::hash(&body.new_password)
+                .map_err(|e| AppError::bad_request(e.to_str()))?;
+            app_state
+                .db_client
+                .update_pwd(&u.id, &hash_pwd)
+                .await
+                .map_err(|e| AppError::server_error(e.to_string()))?;
+
+            // make verification_token expired
+            app_state
+                .db_client
+                .verifed_token(&body.token)
+                .await
+                .map_err(|e| AppError::server_error("message"))?;
+
+            let response = Response {
+                message: "Password has been successfully reset.".to_string(),
+                status: "success",
+            };
+
+            Ok(Json(response))
+        }
+        None => Err(AppError::bad_request("verification_token is wrong")),
+    }
+    */
+
+    let u = user.ok_or(AppError::bad_request(
+        "Invalid or expired token".to_string(),
+    ))?;
+    // check if token expires
+    if let Some(expire) = u.token_expires_at {
+        if Utc::now() > expire {
+            return Err(AppError::bad_request(
+                "Verification token has expired".to_string(),
+            ));
+        }
+    } else {
+        return Err(AppError::bad_request(
+            "Invalid verification token".to_string(),
+        ));
+    }
+
+    // save new password
+    let hash_pwd =
+        password::hash(&body.new_password).map_err(|e| AppError::bad_request(e.to_str()))?;
+    app_state
+        .db_client
+        .update_pwd(&u.id, &hash_pwd)
+        .await
+        .map_err(|e| AppError::server_error(e.to_string()))?;
+
+    // make verification_token expired
+    app_state
+        .db_client
+        .verifed_token(&body.token)
+        .await
+        .map_err(|e| AppError::server_error("message"))?;
+
+    let response = Response {
+        message: "Password has been successfully reset.".to_string(),
+        status: "success",
+    };
+
+    Ok(Json(response))
 }
