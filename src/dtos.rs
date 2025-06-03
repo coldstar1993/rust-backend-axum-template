@@ -174,3 +174,9 @@ pub struct NameUpdateDto {
     #[validate(length(min = 1, message = "Name is required"))]
     name: String,
 }
+
+#[derive(Serialize, Deserialize, Validate)]
+pub struct VerifyEmailQueryDto {
+    #[validate(length(min = 1, message = "Token is required."))]
+    pub token: String,
+}
